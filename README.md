@@ -42,13 +42,13 @@ Masters Compass puts it all in one place and always tells you the single next th
 
 ## What users asked for
 
-Masters Compass has 12 users so far. Their feedback shaped these features:
+Masters Compass has 12 users so far. Their feedback shaped what it does and what comes next:
 
-<!-- TODO: replace with real quotes from users, e.g.
-> "I missed a deadline because I only wrote down the official date." → personal buffer deadlines
--->
-
-- _User feedback quotes to be added._
+| User | What they needed | How Compass responds |
+|---|---|---|
+| **Manha** | She tends to miss deadlines and wants reminders directly on her phone. | The next deadline stays pinned on every page, with a personal buffer date set days before the official one. Phone reminders are next on the roadmap. |
+| **Krishna** | He is applying to the US. | A US visa pack (I-20, SEVIS I-901 fee, DS-160, interview slot) unlocks once he has an offer, and USD fees convert to INR automatically. |
+| **Shaina** | She applied to a lot of universities and didn't know which ones to focus on. | The shortlist sorts programs into Ambitious, Reach and Safe, warns when there's no Safe option, and the home page picks the three things to do next. |
 
 ## Tech
 
