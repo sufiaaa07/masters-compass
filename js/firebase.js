@@ -2,6 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+import { getAnalytics, isSupported, logEvent, setUserId, setUserProperties } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBSUevu8aqt7YzeHKTeKXuxjQIf7rOmttw",
@@ -16,6 +17,20 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const firebaseAuth = getAuth(firebaseApp);
 const firestore = getFirestore(firebaseApp);
+// GA4 via Firebase Analytics (measurementId above). app.js calls track(),
+// which queues events in window.mcTrackQ until this resolves.
+isSupported().then(ok => {
+  if (!ok) return;
+  const analytics = getAnalytics(firebaseApp);
+  window.mcTrack = (name, params) => logEvent(analytics, name, params || {});
+  window.mcSetUser = (uid, props) => {
+    setUserId(analytics, uid);
+    if (props) setUserProperties(analytics, props);
+  };
+  if (window.mcUserProps) window.mcSetUser(window.mcUserProps.uid, window.mcUserProps.props);
+  (window.mcTrackQ || []).splice(0).forEach(([name, params]) => window.mcTrack(name, params));
+}).catch(() => {});
+
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: "select_account" });
 
@@ -27,6 +42,7 @@ const cleanWorkspace = workspace => {
 
 window.mcFirebaseSignIn = async () => {
   try {
+    window.mcJustSignedIn = true;
     await signInWithPopup(firebaseAuth, googleProvider);
   } catch (error) {
     window.dispatchEvent(new CustomEvent("mc-auth-error", { detail: error?.message || "Google sign-in failed." }));

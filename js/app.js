@@ -16,7 +16,39 @@ const save=()=>{
   if(!mcCloudReady||!mcUid||!window.mcCloudSaveNow)return;
   clearTimeout(mcSaveTimer);
   mcSaveTimer=setTimeout(()=>window.mcCloudSaveNow(S).catch(err=>toast('Cloud save failed')),900);
+  trackMilestones();
 };
+// ---- Analytics (GA4 through Firebase Analytics, see js/firebase.js) ----
+// track() queues events until the analytics SDK has loaded. Event params never
+// include names, emails or free text, only counts and categories.
+const track=(name,params)=>{try{if(window.mcTrack)window.mcTrack(name,params||{});else(window.mcTrackQ=window.mcTrackQ||[]).push([name,params||{}])}catch(e){}};
+const dayStr=d=>(d||new Date()).toISOString().slice(0,10);
+// One-time milestones per user, stored in the synced workspace so each fires
+// once per person even across devices.
+const MILESTONES=[
+  ['first_university_added',w=>w.p.length>=1],
+  ['three_universities_added',w=>w.p.length>=3],
+  ['first_deadline_set',w=>w.p.some(p=>p.dl)],
+  ['first_application_submitted',w=>w.p.some(p=>p.status>=3)],
+  ['first_offer_received',w=>w.p.some(p=>p.status===5)],
+  ['first_loan_added',w=>(w.loans||[]).length>=1]
+];
+function trackMilestones(){if(!S||!S.user||!S.p)return;S.ms=S.ms||{};
+  MILESTONES.forEach(([n,ok])=>{try{if(!S.ms[n]&&ok(S)){S.ms[n]=dayStr();track(n,{program_count:S.p.length,days_since_signup:S.visits&&S.visits.first?Math.round((Date.now()-new Date(S.visits.first))/864e5):0})}}catch(e){}})}
+// Called once per signed-in page load. "return_visit" fires when the person
+// comes back on a later day than their last visit.
+function trackVisit(isNew){const v=S.visits=S.visits||{},td=dayStr();
+  const firstTime=!v.first;if(firstTime)v.first=td;
+  const gap=v.last?Math.round((new Date(td)-new Date(v.last))/864e5):null;
+  if(v.last!==td)v.days=(v.days||0)+1;
+  if(isNew)track('sign_up',{method:'google'});else if(window.mcJustSignedIn)track('login',{method:'google'});
+  window.mcJustSignedIn=false;
+  if(gap&&gap>0)track('return_visit',{days_since_last_visit:gap,visit_days:v.days,program_count:S.p.length});
+  v.last=td;
+  window.mcUserProps={uid:S.user.uid,props:{visit_days:v.days,program_count:S.p.length}};if(window.mcSetUser)window.mcSetUser(window.mcUserProps.uid,window.mcUserProps.props);
+  // Mark milestones a returning user already reached as seen, without firing them.
+  if(!S.ms){S.ms={};MILESTONES.forEach(([n,ok])=>{try{if(ok(S))S.ms[n]='before-tracking'}catch(e){}})}
+}
 const hasWorkspaceData=x=>!!(x&&((x.p&&x.p.length)||(x.prof)||(x.tests&&x.tests.length)||(x.loans&&x.loans.length)||(x.vl&&x.vl.length)));
 const normalizeWorkspace=x=>{
   const w=(x&&typeof x==='object')?x:seed();
@@ -79,11 +111,11 @@ function prep(){return head('Prep','Track your exams, topics and recommenders.',
 function visa(){const n=S.vl.filter(x=>x.d).length,m=S.vl.length||1;return head('Visa & Move','Unlocks fully once you accept an offer. Add or remove steps to fit your country.','&#9992;&#65039;')+`<div class="panel"><div class="form" style="margin:0 0 10px">${Object.keys(VPACK).filter(k=>!((S.prof||{}).countries||[]).length||S.prof.countries.includes(k)).map(k=>`<button class="btn" data-a="vpre" data-n="${k}">+ ${k} pack</button>`).join('')}</div><div class="muted" style="margin-bottom:8px">${n} of ${S.vl.length} done. Country rules differ, so confirm each item on the official site.</div><div class="bar" style="margin-bottom:10px"><i style="width:${n/m*100}%"></i></div>${S.vl.map((v,i)=>`<div class="task" data-vi="${i}"><span class="grip" title="Drag to reorder">&#10303;</span><label style="display:flex;gap:10px;flex:1"><input type="checkbox" ${v.d?'checked':''} data-a="vtick" data-i="${i}"><span>${esc(v.t)}</span></label><button class="btn" style="padding:3px 12px" data-a="vopen" data-i="${i}">Details &rsaquo;</button><button class="x" data-a="vup" data-i="${i}" title="Move up">&uarr;</button><button class="x" data-a="vdn" data-i="${i}" title="Move down">&darr;</button><button class="x" data-a="vdel" data-i="${i}">&times;</button></div>`).join('')}<div class="calcbody"><div class="form"><input type="text" id="vl-new" placeholder="Add a step"><button class="btn" data-a="vadd">+</button></div><div class="keys" aria-hidden="true"><i>ON</i><i>MC</i><i class="off">OFF</i></div></div></div>`}
 const P=id=>S.p.find(x=>x.id===id);
 document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t||t.tagName==='SELECT'||t.tagName==='TEXTAREA'||(t.tagName==='INPUT'&&t.type!=='checkbox'))return;const a=t.dataset.a,id=t.dataset.id;
-if(a==='nav'){view=t.dataset.v;open=null}
+if(a==='nav'){view=t.dataset.v;open=null;track('tab_view',{tab:view})}
 else if(a==='open')open=id;
 else if(a==='close')open=null;
 else if(a==='tick'){return}
-else if(a==='add'){const u=document.getElementById('nu').value.trim();if(!u)return;const p=mk(document.getElementById('nn').value.trim()||'Master\'s program',u,document.getElementById('nc').value.trim()||'-',document.getElementById('nt').value);p.buf=S.buf;S.p.push(p);gain(5,t);save()}
+else if(a==='add'){const u=document.getElementById('nu').value.trim();if(!u)return;const p=mk(document.getElementById('nn').value.trim()||'Master\'s program',u,document.getElementById('nc').value.trim()||'-',document.getElementById('nt').value);p.buf=S.buf;S.p.push(p);track('program_added',{program_count:S.p.length,source:'shortlist'});gain(5,t);save()}
 else if(a==='del'){S.p=S.p.filter(x=>x.id!==id);open=null;save()}
 else if(a==='padd'){const k=t.dataset.k,i=document.getElementById('in-'+k),v=i.value.trim();if(!v)return;S.prep[k].push({t:v,d:false});gain(5,t);save()}
 else if(a==='pdel'){e.preventDefault();S.prep[t.dataset.k].splice(+t.dataset.i,1);save()}
@@ -330,8 +362,10 @@ window.addEventListener('mc-auth-state',async e=>{
     S.p.forEach(p=>{if(!p.plan)genPlan(p)});
     applyPrefs();
     S.user={uid:u.uid,name:u.name,email:u.email,photoURL:u.photoURL};
+    trackVisit(!d.cloudExists&&!(cached&&cached.p));
     localSave();
     mcCloudReady=true;
+    if(d.cloudExists)save(); // store this visit so "return_visit" is measured from it next time
     view='Home';authStep='land';render();
 
     if(!d.cloudExists){
@@ -378,7 +412,7 @@ if(a==='obs'){const g=t.dataset.g,v=t.dataset.v;if(t.dataset.m==='1'){const k=ob
 else if(a==='obdone'){S.prof={intake:obD.intake,countries:obD.countries,stage:obD.stage,tests:obD.tests,fund:obD.fund};obD.tests.filter(x=>x!=='None / Not sure').forEach(x=>{if(!S.tests.some(y=>y.name===x)){const m=mkTest(x),d=obD.td[x]||{};m.date=d.d||'';m.target=d.g||'';S.tests.push(m)}});view='Home';save();render()}
 else if(a==='addopen'){addOpen=true;addD={intake:intakeStr(),country:(((S.prof||{}).countries||[]).length===1?S.prof.countries[0]:'')};render()}
 else if(a==='addclose'){addOpen=false;render()}
-else if(a==='addgo'){const D=addD;if(!(D.uni||'').trim()){toast('Add the university name first');return}const p=mk(D.name||"Master's program",D.uni.trim(),D.country||'-','R'),I=inf(p);p.buf=S.buf;p.dl=D.dl||'';p.intake=D.intake||'';p.src=D.src||'';p.dur=D.dur||'';if(D.tuition){I.tuitionA=D.tuition;I.tuitionC=D.cur||'USD'}if(D.appfee){I.appfeeA=D.appfee;I.appfeeC=D.cur||'USD'}p.vf={};['gre','eng'].forEach(k=>{if(D[k])p.vf[k]={v:D[k],st:'Needs checking'}});genPlan(p);S.p.push(p);addOpen=false;view='Shortlist';open=p.id;save();render();toast('Added to Compass')}
+else if(a==='addgo'){const D=addD;if(!(D.uni||'').trim()){toast('Add the university name first');return}const p=mk(D.name||"Master's program",D.uni.trim(),D.country||'-','R'),I=inf(p);p.buf=S.buf;p.dl=D.dl||'';p.intake=D.intake||'';p.src=D.src||'';p.dur=D.dur||'';if(D.tuition){I.tuitionA=D.tuition;I.tuitionC=D.cur||'USD'}if(D.appfee){I.appfeeA=D.appfee;I.appfeeC=D.cur||'USD'}p.vf={};['gre','eng'].forEach(k=>{if(D[k])p.vf[k]={v:D[k],st:'Needs checking'}});genPlan(p);S.p.push(p);track('program_added',{program_count:S.p.length,source:'add_page',has_deadline:!!p.dl,has_fee:!!D.appfee,has_tuition:!!D.tuition,used_ai:!!D.ai});addOpen=false;view='Shortlist';open=p.id;save();render();toast('Added to Compass')}
 else if(a==='rdone'){const p=P(id);p.plan[i].d=true;if(i===10){p.status=3;toast('Application submitted \uD83C\uDF89')}else toast('Done');save();render()}
 else if(a==='rpush'){const p=P(id),t0=new Date();t0.setHours(0,0,0,0);let d=pdate(p,p.plan[i]);d=d&&d>t0?new Date(d):t0;d.setDate(d.getDate()+7);p.plan[i].dt=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;save();render()}});
 document.addEventListener('change',e=>{const t=e.target,a=t.dataset.a,i=+t.dataset.i;
@@ -413,7 +447,7 @@ ${D.tests.map(x=>`<div class="card" style="margin-top:10px"><b>${esc(x.name)} &#
 <h2 style="margin-top:18px">How important is funding?</h2><div class="opts">${Object.keys(FUN).map(k=>`<button class="btn ${D.fund===k?'pri':''}" data-a="oset" data-g="fund" data-v="${k}">${FUN[k]}</button>`).join('')}</div></div>
 <div class="ctawrap">${sum.length?`<div class="lcd" style="max-width:none;margin-bottom:10px">YOUR SETUP: ${esc(sum.join('  /  '))}</div>`:''}<button class="cta" data-a="obgo" ${ok?'':'disabled'}>${S.prof?'Update my workspace':'Build my workspace'} &rarr;</button>${ok?'':`<p class="muted" style="text-align:center;margin:8px 0 0">Choose ${[!D.ik&&'intake',!D.stage&&'stage',!D.fund&&'funding'].filter(Boolean).join(', ').replace(/, ([^,]*)$/,' and $1')} to continue.</p>`}</div>${obSheet?sheetHtml():''}`}
 function buildHtml(){return `<div class="panel" style="text-align:center;padding:50px 20px"><h1 style="font-size:44px">Building your Compass...</h1>${['Setting your intake','Personalizing your application stage','Setting up test planning','Preparing funding tools'].map((x,i)=>`<p class="bl" style="animation-delay:${i*.35}s"><b>&#10003;</b> ${x}</p>`).join('')}</div>`}
-function obFinish(){const D=obD;let se=D.season,yr=+D.year;if(D.ik!=='Other'){se=D.ik.split(' ')[0];yr=+D.ik.split(' ')[1]}
+function obFinish(){const D=obD;track(S.prof?'setup_updated':'onboarding_complete',{stage:D.stage||'',funding:D.fund||'',country_count:D.countries.length,test_count:D.tests.length});let se=D.season,yr=+D.year;if(D.ik!=='Other'){se=D.ik.split(' ')[0];yr=+D.ik.split(' ')[1]}
 S.prof={ik:D.ik,intake:{season:se,year:yr},countries:[...D.countries],stage:D.stage,tests:D.tests.map(x=>({...x})),noTests:D.none,fund:D.fund};
 D.tests.forEach(x=>{let m=S.tests.find(y=>y.name===x.name);if(!m){m=mkTest(x.name);S.tests.push(m)}if(x.date)m.date=x.date;if(x.target)m.target=x.target;if(x.score)m.mock=x.score;m.status=x.status});
 obB=false;obOpen=false;view='Home';save();render()}
