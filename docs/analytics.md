@@ -1,10 +1,19 @@
 # Analytics
 
-Masters Compass sends usage events to **Google Analytics 4** through Firebase Analytics, using the `measurementId` already in the Firebase config (`G-W8J70N0MRY`). Events carry counts and categories only, never names, emails, university names or anything typed into a field. Signed-in users are identified by their Firebase uid so one person on two devices counts once.
+Masters Compass uses **Microsoft Clarity**, which is free, for heatmaps, session recordings and usage events. The Clarity script loads from `index.html`. Events carry counts and categories only, never names, emails, university names or anything typed into a field. Signed-in users are identified to Clarity by their Firebase uid (Clarity hashes it before sending), so one person on two devices counts once.
+
+## Setup
+
+1. Sign in at [clarity.microsoft.com](https://clarity.microsoft.com) and create a project for `masters-compass.vercel.app`.
+2. Copy the project ID from **Settings > Setup** (the short code in the tracking snippet).
+3. Put that ID in the Clarity snippet in `index.html` (currently `z7zppitn14`).
+4. Clarity masks text that people type into inputs by default. Keep that setting on.
 
 ## Events
 
-| Event | When it fires | Params |
+Clarity custom events don't take parameters, so each event is sent by name and its params are recorded as **custom tags** on the session (for example `program_count = 3`).
+
+| Event | When it fires | Tags |
 |---|---|---|
 | `sign_up` | First Google sign-in for a new account | `method` |
 | `login` | Later sign-ins through the Google button | `method` |
@@ -24,9 +33,6 @@ One-time milestones are stored in the user's workspace (`ms`), so they fire once
 
 ## Seeing the numbers
 
-1. In GA4, open **Admin > Events** and mark `first_university_added`, `return_visit` and `first_application_submitted` as **key events**.
-2. **Reports > Realtime** or **Admin > DebugView** shows events within seconds, which is the quickest way to check it works.
-3. For resume-style numbers, use **Explore > Funnel exploration** with the steps `sign_up` > `onboarding_complete` > `first_university_added` > `return_visit`. That gives "X of N users added a university" and "Y% came back on another day".
-4. **Reports > Retention** shows returning users by cohort with no extra setup.
-
-Standard GA4 metrics (users, sessions, engagement time, device, country) are collected automatically.
+1. **Dashboard** shows users, sessions, scroll depth, rage clicks and dead clicks automatically.
+2. **Recordings** and **Heatmaps** can be filtered by **Custom events** (for example `first_university_added`) or by **Custom tags**.
+3. For resume-style numbers, filter the dashboard by the custom event `first_university_added` to see how many sessions reached it. Use **Returning users** in the dashboard, or filter by `return_visit`, to see who came back on another day.

@@ -18,10 +18,13 @@ const save=()=>{
   mcSaveTimer=setTimeout(()=>window.mcCloudSaveNow(S).catch(err=>toast('Cloud save failed')),900);
   trackMilestones();
 };
-// ---- Analytics (GA4 through Firebase Analytics, see js/firebase.js) ----
-// track() queues events until the analytics SDK has loaded. Event params never
-// include names, emails or free text, only counts and categories.
-const track=(name,params)=>{try{if(window.mcTrack)window.mcTrack(name,params||{});else(window.mcTrackQ=window.mcTrackQ||[]).push([name,params||{}])}catch(e){}};
+// ---- Analytics (Microsoft Clarity, loaded in index.html) ----
+// Clarity custom events have no params, so track() sends the event name and
+// records each param as a session tag. The Clarity stub queues calls until the
+// script loads. Params never include names, emails or free text, only counts
+// and categories.
+const clarity=(...a)=>{try{if(typeof window.clarity==='function')window.clarity(...a)}catch(e){}};
+const track=(name,params)=>{clarity('event',name);Object.entries(params||{}).forEach(([k,v])=>clarity('set',k,String(v)))};
 const dayStr=d=>(d||new Date()).toISOString().slice(0,10);
 // One-time milestones per user, stored in the synced workspace so each fires
 // once per person even across devices.
@@ -45,7 +48,7 @@ function trackVisit(isNew){const v=S.visits=S.visits||{},td=dayStr();
   window.mcJustSignedIn=false;
   if(gap&&gap>0)track('return_visit',{days_since_last_visit:gap,visit_days:v.days,program_count:S.p.length});
   v.last=td;
-  window.mcUserProps={uid:S.user.uid,props:{visit_days:v.days,program_count:S.p.length}};if(window.mcSetUser)window.mcSetUser(window.mcUserProps.uid,window.mcUserProps.props);
+  clarity('identify',S.user.uid);clarity('set','visit_days',String(v.days));clarity('set','program_count',String(S.p.length));
   // Mark milestones a returning user already reached as seen, without firing them.
   if(!S.ms){S.ms={};MILESTONES.forEach(([n,ok])=>{try{if(ok(S))S.ms[n]='before-tracking'}catch(e){}})}
 }
