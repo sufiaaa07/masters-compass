@@ -27,7 +27,7 @@ Masters Compass puts it all in one place and always tells you the single next th
 
 <table>
   <tr>
-    <td><img src="docs/screenshots/home.png" alt="Home dashboard with next steps and progress"></td>
+    <td><img src="docs/screenshots/today.png" alt="Today: three next steps and overall progress"></td>
     <td><img src="docs/screenshots/shortlist.png" alt="Shortlist sorted into Ambitious, Reach and Safe"></td>
   </tr>
   <tr>
@@ -36,6 +36,10 @@ Masters Compass puts it all in one place and always tells you the single next th
   </tr>
   <tr>
     <td><img src="docs/screenshots/onboarding.png" alt="First-run setup asking intake, countries, stage and funding"></td>
+    <td><img src="docs/screenshots/program.png" alt="Program command center with deadlines and the next step"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/home.png" alt="Home header with the pinned next step"></td>
     <td align="center"><img src="docs/screenshots/mobile-landing.png" alt="Landing page on a phone" width="260"></td>
   </tr>
 </table>
