@@ -139,3 +139,5 @@ select.vp{border:0;background:transparent;font-weight:600;font-size:12px;padding
 .nxt{background:var(--yellow);color:#161616;border-radius:20px;padding:16px 18px;margin-top:12px}.nxt .nl{font-size:11px;letter-spacing:.14em;font-weight:700;opacity:.65}.nxt .nt{font-size:20px;font-weight:700;margin:2px 0}.nxt .nm{font-size:13px;opacity:.7}.nxt p{margin:8px 0 12px;font-size:14px}
 .phase2{background:rgba(128,128,120,.10);border-radius:18px;padding:12px 14px;margin-top:12px}
 .trow{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}.trow input[type=checkbox]{margin-top:4px;accent-color:var(--rose);width:17px;height:17px}
+.aiev{display:block;margin-top:3px;font-size:11px;line-height:1.35;color:var(--mute);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aimsg{background:var(--line);border-radius:12px;padding:10px 12px;font-size:13px;margin:6px 0}

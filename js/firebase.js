@@ -2,6 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-functions.js";
 import { getAnalytics, isSupported, logEvent, setUserId, setUserProperties } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
 
 const firebaseConfig = {
@@ -30,6 +31,11 @@ isSupported().then(ok => {
   if (window.mcUserProps) window.mcSetUser(window.mcUserProps.uid, window.mcUserProps.props);
   (window.mcTrackQ || []).splice(0).forEach(([name, params]) => window.mcTrack(name, params));
 }).catch(() => {});
+
+// AI page reading: a Cloud Function (functions/index.js) calls OpenAI with a
+// key kept in Secret Manager. The browser only ever sees the extracted fields.
+const extractProgramInfo = httpsCallable(getFunctions(firebaseApp, "us-central1"), "extractProgramInfo", { timeout: 70000 });
+window.mcExtractProgram = async (text, url) => (await extractProgramInfo({ text, url })).data;
 
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: "select_account" });
