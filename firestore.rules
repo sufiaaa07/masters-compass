@@ -1,0 +1,37 @@
+rules_version = '2';
+
+// Masters Compass stores one document per signed-in user at users/{uid}.
+// Each person may read and write only their own document. Everything else
+// in the database is closed by default.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // Only the fields the app writes are allowed, so a client cannot stuff
+    // arbitrary data into its document.
+    function validWorkspace() {
+      return request.resource.data.keys().hasOnly(
+               ['schemaVersion', 'email', 'displayName', 'workspace', 'updatedAt'])
+        && request.resource.data.workspace is map;
+    }
+
+    match /users/{uid} {
+      allow get: if isOwner(uid);
+      allow list: if false;              // no browsing other people's documents
+      allow create, update: if isOwner(uid) && validWorkspace();
+      allow delete: if isOwner(uid);
+    }
+
+    // Deny everything that is not matched above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
