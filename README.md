@@ -55,13 +55,13 @@ Masters Compass has 12 users so far. Their feedback shaped what it does and what
 - **Frontend:** plain HTML, CSS and JavaScript, no build step. Hosted on Vercel.
 - **Auth and data:** Firebase Authentication (Google) and Cloud Firestore, one document per user at `users/{uid}`.
 - **Security:** [`firestore.rules`](firestore.rules) lets each user read and write only their own document. Everything else is denied. Covered by an emulator test.
-- **Analytics:** Google Analytics 4 through Firebase Analytics, tracking sign-ups, first university added, return visits and other milestones. See [docs/analytics.md](docs/analytics.md).
+- **Analytics:** Microsoft Clarity (free), with heatmaps, session recordings, and events for sign-ups, first university added, return visits and other milestones. See [docs/analytics.md](docs/analytics.md).
 
 ```
 index.html            page shell and theme bootstrap
 css/base.css          layout and components
 css/themes.css        the five themes
-js/firebase.js        sign-in, Firestore sync, analytics
+js/firebase.js        sign-in, Firestore sync
 js/app.js             state, views and event handlers
 firestore.rules       database security rules
 tests/                rules tests (Firestore emulator)
