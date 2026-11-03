@@ -122,7 +122,7 @@ body.landing .cap{width:clamp(64px,13vh,108px);height:clamp(58px,12vh,98px);font
 body.landing .g3{grid-template-columns:repeat(3,1fr);gap:12px}
 body.landing .g3 .card{padding:clamp(8px,2vh,14px) 14px}
 body.landing .g3 .card h2{font-size:clamp(13px,2.2vh,18px);margin:0 0 4px}
-@media(max-width:700px){body.landing .g3 .card p{display:none}body.landing .g3 .card h2{font-size:12px}}
+@media(max-width:700px){body.landing .wrap{height:auto;min-height:100vh;min-height:100dvh;overflow:visible;justify-content:flex-start}body.landing .g3{grid-template-columns:1fr;gap:10px}body.landing .g3 .card{padding:14px 16px}body.landing .g3 .card h2{font-size:16px}body.landing .g3 .card p{margin:0;font-size:14px;line-height:1.45}body.landing .caps{gap:10px}body.landing .cap{width:calc((100% - 30px)/4);height:auto;aspect-ratio:1;font-size:13px;border-radius:18px}}
 .opts{display:flex;flex-wrap:wrap;gap:12px;margin:8px 0}.stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:8px 0}
 .btn.opt{text-align:left;padding:14px 16px;border-radius:18px;line-height:1.3}
 .cta{display:block;width:100%;border:0;cursor:pointer;font:inherit;background:var(--green);color:#161616;font-size:20px;font-weight:700;padding:18px;border-radius:20px;box-shadow:inset 0 -6px 0 rgba(0,0,0,.16),0 7px 0 rgba(0,0,0,.35),0 12px 18px rgba(0,0,0,.12);transition:transform .08s}
